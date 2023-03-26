@@ -17,18 +17,19 @@
 ```
 
 
-#整体功能：
+**整体功能：
+
 依赖多线激光雷达给出来的位置信息，录制线路，跟线行使
 
 
-#纯跟踪参考：
+**纯跟踪参考：
 ```
 原理介绍：https://blog.csdn.net/wang073081/article/details/104627100
 代码参考：https://github.com/NeXTzhao/planning
 ```
 
 
-#文件架构：
+**文件架构：
 ```
 agv_robot包
 src
@@ -49,7 +50,8 @@ uint16 num #调用第几条线路
 uint16 sum #调用服务的总次数
 ```
 
-#仿真测试录制线路：
+**仿真测试录制线路：
+
 仿真环境启动：
 ```
 $ roslaunch agv_robot sim_navigation.launch
@@ -92,7 +94,8 @@ $ rosrun agv_robot record_client 0
 可以暂停录制线路，同时record_path程序挂在终端，随时可以发布新的线路编号来重新录制线路
 
 
-#发布线路：
+**发布线路：
+
 发布第几条线路（目前支持1-1000）：
 如果想发布第一条线路：
 ```
@@ -109,7 +112,7 @@ $ rosrun agv_robot global_client 0
 可以暂停发布线路，同时record_path程序挂在终端，随时可以发布新的线路编号来重新发布线路
 
 
-#跟线：
+**跟线：
 ```
 <launch>
   <param name="car_velocity" type="double" value="0.4" /> <!--小车行走的速度，单位：米/秒-->
@@ -122,7 +125,7 @@ $ rosrun agv_robot global_client 0
 </launch>
 ```
 
-启动跟线：
+**启动跟线：
 ```
 $ roslaunch agv_robot pure_pursuit.launch
 ```
@@ -157,12 +160,14 @@ $ rostopic pub -1 /car_stop std_msgs/Bool "data: false"
 ```
 
 
-#提高跟线精度的方法：
+**提高跟线精度的方法：
+
 把录制线路的间隔调小，把小车行使时候的线速度调小，把相隔两个跟随点的误差范围调小，
 已去掉纠偏功能（理论上没这个必要）
 
 
-#真实履带小车调试方法：
+**真实履带小车调试方法：
+
 启动录制线路（不用关闭，发布线路也是这个程序）：
 ```
 $ roslaunch agv_robot record_path.launch
