@@ -1,0 +1,10 @@
+<!-- -->
+<launch>
+  <param name="car_velocity" type="double" value="0.4" /> <!--小车行走的速度，单位：米/秒-->
+  <param name="point_distance" type="double" value="0.3" /> <!--相隔两个跟随点的误差范围，单位：米-->
+  <param name="scan_distance_3D" type="double" value="0.5" /> <!--3D雷达停障碍距离，单位：米-->
+  <param name="scan_distance_2D" type="double" value="0.8" /> <!--2D雷达停障碍距离，单位：米-->
+  <param name="is_use_sim" type="bool" value="true" /> <!--是否使用仿真-->
+  <node pkg="agv_robot" type="pure_pursuit" name="pure_pursuit" output="screen">
+  </node>       
+</launch>

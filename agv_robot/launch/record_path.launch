@@ -1,0 +1,8 @@
+<!-- -->
+<launch>
+  <param name="interval" type="double" value="0.5" /> <!--录制时候两个点的间隔，单位：米-->
+  <param name="is_use_sim" type="bool" value="true" /> <!--是否使用仿真-->
+  <node pkg="agv_robot" type="record_path" name="record_path" output="screen">
+  </node>       
+      
+</launch>
