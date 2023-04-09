@@ -9,6 +9,7 @@ namespace PurePursuitNS
     nh_.getParam("scan_distance_3D", scan_distance_3D_);
     nh_.getParam("scan_distance_2D", scan_distance_2D_);
     nh_.getParam("is_use_sim", is_use_sim_);
+    nh_.getParam("wave_distance", wave_distance_);
 
     initial(); // 初始化
 
@@ -24,8 +25,9 @@ namespace PurePursuitNS
     else // 雷达定位
     {
       current_pose_sub_ = nh_.subscribe("/ndt_pose", 10, &PurePursuit::currentPoseCallback, this); // 回调当前位置
-      scan_sub_ = nh_.subscribe("/scan", 20, &PurePursuit::scanCallback, this);                    // 雷达回调
+      scan_3D_sub_ = nh_.subscribe("/scan", 20, &PurePursuit::scan3DCallback, this);               // 雷达回调
       scan_2D_sub_ = nh_.subscribe("/scan_2D", 20, &PurePursuit::scan2DCallback, this);            // 雷达回调
+      wave_sub_ = nh_.subscribe("/sonar", 10, &PurePursuit::waveCallback, this);                   // 超声波回调
     }
 
     robot_car_info_pub_ = nh_.advertise<agv_robot::robot_car_info>("/robot_car_info_msg", 1);
@@ -54,12 +56,15 @@ namespace PurePursuitNS
 
     current_vel_x_ = car_velocity_;
 
-    smallest_distance_ = 10.0; // 定义了一个接收激光雷达扫描的距离
+    smallest_3D_distance_ = 10.0; // 定义了一个接收激光雷达扫描的距离
     smallest_2D_distance_ = 10.0;
-    is_pub_speed_ = true;
-    is_pub_2d_speed_ = true;
+    is_pub_3D_speed_ = true;
+    is_pub_2D_speed_ = true;
+    is_pub_wave_speed_ = true;
 
     is_stop_car_ = false;
+
+    follow_state_ == FollowState::RUN; // 初始化为正常行使状态
   }
 
   void PurePursuit::odomCallback(const nav_msgs::Odometry &msg)
@@ -77,7 +82,7 @@ namespace PurePursuitNS
     is_sub_odom_ = true;
   }
 
-  void PurePursuit::scanCallback(const sensor_msgs::LaserScanConstPtr &msg)
+  void PurePursuit::scan3DCallback(const sensor_msgs::LaserScanConstPtr &msg)
   {
     int arr_size = floor((msg->angle_max - msg->angle_min) / msg->angle_increment);
     for (int i = 900; i < 1240; i++) // 滤波 90
@@ -86,21 +91,22 @@ namespace PurePursuitNS
       {
         continue;
       }
-      if (msg->ranges[i] < smallest_distance_)
+      if (msg->ranges[i] < smallest_3D_distance_)
       {
-        smallest_distance_ = msg->ranges[i];
+        smallest_3D_distance_ = msg->ranges[i];
       }
     }
 
-    if (smallest_distance_ <= scan_distance_3D_) // 雷达避障的距离
+    if (smallest_3D_distance_ <= scan_distance_3D_) // 雷达避障的距离
     {
-      is_pub_speed_ = false;
+      std::cout << "多线雷达停障" << std::endl;
+      is_pub_3D_speed_ = false;
     }
     else
     {
-      is_pub_speed_ = true;
+      is_pub_3D_speed_ = true;
     }
-    smallest_distance_ = 10.0;
+    smallest_3D_distance_ = 10.0;
   }
 
   void PurePursuit::scan2DCallback(const sensor_msgs::LaserScan::ConstPtr &scan) // 雷达回调
@@ -123,13 +129,35 @@ namespace PurePursuitNS
 
     if (smallest_2D_distance_ <= scan_distance_2D_) // 雷达避障的距离#1.0
     {
-      is_pub_2d_speed_ = false;
+      std::cout << "单线雷达停障" << std::endl;
+      is_pub_2D_speed_ = false;
     }
     else
     {
-      is_pub_2d_speed_ = true;
+      is_pub_2D_speed_ = true;
     }
     smallest_2D_distance_ = 10.0;
+  }
+
+  void PurePursuit::waveCallback(const std_msgs::UInt16MultiArrayConstPtr &msg) // 超声波回调
+  {
+    int data0 = msg->data[0]; // 前1
+    int data1 = msg->data[1]; // 前2
+    int data2 = msg->data[2]; // 前3
+    int data3 = msg->data[3]; // 前4
+    int data4 = msg->data[4]; // 后1
+    int data5 = msg->data[5]; // 后2
+    int data6 = msg->data[6]; // 后3
+    int data7 = msg->data[7]; // 后4
+    if ((data0 > 0 && data0 < wave_distance_) || (data1 > 0 && data1 < wave_distance_) || (data2 > 0 && data2 < wave_distance_) || (data3 > 0 && data3 < wave_distance_) || (data4 > 0 && data4 < wave_distance_) || (data5 > 0 && data5 < wave_distance_) || (data6 > 0 && data6 < wave_distance_) || (data7 > 0 && data7 < wave_distance_))
+    {
+      std::cout << "超声波停障" << std::endl;
+      is_pub_wave_speed_ = false;
+    }
+    else
+    {
+      is_pub_wave_speed_ = true;
+    }
   }
 
   void PurePursuit::setSpeed(const std_msgs::Float64 &msg) // 设定速度
@@ -269,7 +297,7 @@ namespace PurePursuitNS
       else
       {
         ROS_WARN("NOTHING!");
-        return FollowState::RUN;
+        return FollowState::STOP;
       }
     }
     return FollowState::RUN;
@@ -315,7 +343,7 @@ namespace PurePursuitNS
           double position_motor = Position_PID(-remaining_dis, 0.0);
           double theta = current_vel_x_ * curvature_k_;
 
-          if (is_pub_speed_ && is_pub_2d_speed_)
+          if (is_pub_3D_speed_ && is_pub_2D_speed_ && is_pub_wave_speed_)
           {
             geometry_msgs::Twist vel_msg;
             vel_msg.linear.x = Xianfu(position_motor, current_vel_x_);
@@ -325,11 +353,12 @@ namespace PurePursuitNS
           }
           else
           {
-            ROS_WARN("SCAN STOP");
+            ROS_WARN("SCAN STOP or WAVE STOP");
             geometry_msgs::Twist vel_msg;
             vel_msg.linear.x = 0.0;
             vel_msg.angular.z = Xianfu(theta, 1.0);
             cmd_vel_pub_.publish(vel_msg);
+            // ROS_INFO("cmd_vel [%f] [%f]", vel_msg.linear.x, vel_msg.angular.z);
           }
           break;
         }
@@ -340,6 +369,7 @@ namespace PurePursuitNS
           vel_msg.linear.x = 0.0;
           vel_msg.angular.z = 0.0;
           cmd_vel_pub_.publish(vel_msg);
+          // ROS_INFO("cmd_vel [%f] [%f]", vel_msg.linear.x, vel_msg.angular.z);
 
           is_sub_path_ = false;
           break;

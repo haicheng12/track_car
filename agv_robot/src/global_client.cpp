@@ -13,6 +13,7 @@ int main(int argc, char **argv)
 
   ros::NodeHandle n;
   ros::ServiceClient client = n.serviceClient<agv_robot::path>("set_path_num");
+
   agv_robot::path srv;
   srv.request.num = atoll(argv[1]);
   if (client.call(srv))

@@ -219,12 +219,12 @@ include_directories("/usr/include/eigen3")
 # catkin_add_nosetests(test)
 
 add_executable(record_path src/record_path/record_path_core.cpp 
-                                                             src/record_path/record_path.cpp)
+                           src/record_path/record_path.cpp)
 target_link_libraries(record_path ${catkin_LIBRARIES})
 add_dependencies(record_path agv_robot_gencpp)
 
 add_executable(pure_pursuit src/pure_pursuit/pure_pursuit_core.cpp 
-                                                              src/pure_pursuit/pure_pursuit.cpp)
+                            src/pure_pursuit/pure_pursuit.cpp)
 target_link_libraries(pure_pursuit ${catkin_LIBRARIES})
 
 add_executable(record_client src/record_client.cpp)
@@ -234,6 +234,10 @@ add_dependencies(record_client agv_robot_gencpp)
 add_executable(global_client src/global_client.cpp)
 target_link_libraries(global_client ${catkin_LIBRARIES})
 add_dependencies(global_client agv_robot_gencpp)
+
+add_executable(teleop_cmd_vel src/teleop_cmd_vel.cpp)
+target_link_libraries(teleop_cmd_vel ${catkin_LIBRARIES})
+add_dependencies(teleop_cmd_vel agv_robot_gencpp)
 
 #install(DIRECTORY include/${PROJECT_NAME}/
 #  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}

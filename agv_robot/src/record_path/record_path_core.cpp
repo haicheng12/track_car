@@ -205,7 +205,7 @@ namespace RecordPathNS
             pose_stamped.pose.orientation = tf::createQuaternionMsgFromYaw(vec_points_[i].yaw);
             path.poses.push_back(pose_stamped);
         }
-        global_path_pub_.publish(path);
+        global_path_pub_.publish(path); // 发布全局线路
     }
 
     void RecordPath::pubGlobalNum(int index)
