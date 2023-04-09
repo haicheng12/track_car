@@ -3,6 +3,7 @@
 开发人员：杨工
 
 工作记录：
+——2023.3.26
 1、代码重构，精简代码
 2、跟线逻辑重构，解决小车到达终点启停无法继续前进的BUG
 3、原有的3D和2D雷达避障保留，并且提取外参作为可修改参数
@@ -14,25 +15,30 @@
 9、增加行使途中可以更改速度的接口
 10、支持缠绕的线路，录制线路时候有重合的线路不影响行使
 11、增加小车行使过程中暂停的功能，取消暂停可以重新行使
+
+——2023.4.9
+1、添加原有超声波停障逻辑，并提取参数
+2、添加键盘控制节点
+
 ```
 
-**整体功能：**
+**整体功能**
 
-依赖多线激光雷达给出来的位置信息，录制线路，跟线行使
+依赖多线激光雷达给出来的位置信息，录制线路，跟线行使。使用多线雷达、单线雷达、超声波进行停障
 
 
-**纯跟踪参考：**
+**纯跟踪参考**
 ```
 原理介绍：https://blog.csdn.net/wang073081/article/details/104627100
 代码参考：https://github.com/NeXTzhao/planning
 ```
 
 
-**文件架构：**
+**文件架构**
 ```
 agv_robot包
 src
-record_path 录制线路，发布线路合一起，通过ROS服务调用接口。
+record_path 录制线路，发布线路合一起，通过ROS服务调用接口
 pure_pursuit 跟线程序
 
 msg 自定义的消息
@@ -49,7 +55,7 @@ uint16 num #调用第几条线路
 uint16 sum #调用服务的总次数
 ```
 
-**仿真测试录制线路：**
+**仿真测试录制线路**
 仿真环境启动：
 ```
 $ roslaunch agv_robot sim_navigation.launch
@@ -69,7 +75,7 @@ $ roslaunch agv_robot record_path.launch
 ```
 <launch>
   <param name="interval" type="double" value="0.5" /> <!--录制时候两个点的间隔，单位：米-->
-  <param name="is_use_sim" type="bool" value="true" /> <!--是否使用仿真-->
+  <param name="is_use_sim" type="bool" value="false" /> <!--是否使用仿真-->
   <node pkg="agv_robot" type="record_path" name="record_path" output="screen">
   </node>
 </launch>
@@ -91,7 +97,7 @@ $ rosrun agv_robot record_client 0
 ```
 可以暂停录制线路，同时record_path程序挂在终端，随时可以发布新的线路编号来重新录制线路
 
-**发布线路：**
+**发布线路**
 
 发布第几条线路（目前支持1-1000）：
 如果想发布第一条线路：
@@ -109,20 +115,21 @@ $ rosrun agv_robot global_client 0
 可以暂停发布线路，同时record_path程序挂在终端，随时可以发布新的线路编号来重新发布线路
 
 
-**跟线：**
+**跟线**
 ```
 <launch>
   <param name="car_velocity" type="double" value="0.4" /> <!--小车行走的速度，单位：米/秒-->
   <param name="point_distance" type="double" value="0.3" /> <!--相隔两个跟随点的误差范围，单位：米-->
   <param name="scan_distance_3D" type="double" value="0.5" /> <!--3D雷达停障碍距离，单位：米-->
   <param name="scan_distance_2D" type="double" value="0.8" /> <!--2D雷达停障碍距离，单位：米-->
-  <param name="is_use_sim" type="bool" value="true" /> <!--是否使用仿真-->
+  <param name="wave_distance" type="int" value="300" /> <!--超声波停障碍距离，单位：毫米-->
+  <param name="is_use_sim" type="bool" value="false" /> <!--是否使用仿真-->
   <node pkg="agv_robot" type="pure_pursuit" name="pure_pursuit" output="screen">
   </node>
 </launch>
 ```
 
-**启动跟线：**
+**启动跟线**
 ```
 $ roslaunch agv_robot pure_pursuit.launch
 ```
@@ -156,12 +163,12 @@ $ rostopic pub -1 /car_stop std_msgs/Bool "data: true"
 $ rostopic pub -1 /car_stop std_msgs/Bool "data: false"
 ```
 
-**提高跟线精度的方法：**
+**提高跟线精度的方法**
 
 把录制线路的间隔调小，把小车行使时候的线速度调小，把相隔两个跟随点的误差范围调小，
 已去掉纠偏功能（理论上没这个必要）
 
-**真实履带小车调试方法：**
+**真实履带小车调试方法**
 启动录制线路（不用关闭，发布线路也是这个程序）：
 ```
 $ roslaunch agv_robot record_path.launch
@@ -190,7 +197,9 @@ $ rosrun agv_robot global_client 0
 设置速度命令：
 ```
 $ rostopic pub  /set_speed std_msgs/Float64 "data: 0.1" 
+
 ```
+
 
 
 
